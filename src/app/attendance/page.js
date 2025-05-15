@@ -14,10 +14,13 @@ function QRScannerModal({ onScan, onClose }) {
     const initializeScanner = async () => {
       try {
         // First check if we have camera permissions
+        console.log('Checking for camera devices...');
         const devices = await navigator.mediaDevices.enumerateDevices();
+        console.log('Available devices:', devices);
         const hasCamera = devices.some(device => device.kind === 'videoinput');
         
         if (!hasCamera) {
+          console.error('No camera found in devices:', devices);
           toast.error('No camera found on your device');
           onClose();
           return;
@@ -25,13 +28,25 @@ function QRScannerModal({ onScan, onClose }) {
 
         // Request camera permissions explicitly
         try {
-          await navigator.mediaDevices.getUserMedia({ video: true });
+          console.log('Requesting camera permissions...');
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            } 
+          });
+          // Stop the stream immediately as Html5QrcodeScanner will request its own
+          stream.getTracks().forEach(track => track.stop());
+          console.log('Camera permissions granted');
         } catch (err) {
-          toast.error('Camera permission denied');
+          console.error('Camera permission error:', err);
+          toast.error('Camera permission denied. Please allow camera access and try again.');
           onClose();
           return;
         }
 
+        console.log('Initializing QR scanner...');
         scanner = new Html5QrcodeScanner(
           "qr-reader",
           { 
@@ -42,13 +57,20 @@ function QRScannerModal({ onScan, onClose }) {
             showZoomSliderIfSupported: true,
             defaultZoomValueIfSupported: 2,
             rememberLastUsedCamera: true,
-            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+            videoConstraints: {
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
           },
           false
         );
 
+        console.log('Rendering QR scanner...');
         await scanner.render(
           (result) => {
+            console.log('QR code scanned:', result);
             onScan(result);
             scanner.clear();
             onClose();
@@ -61,9 +83,10 @@ function QRScannerModal({ onScan, onClose }) {
             }
           }
         );
+        console.log('QR scanner rendered successfully');
       } catch (error) {
         console.error('Scanner initialization error:', error);
-        toast.error('Failed to initialize camera');
+        toast.error('Failed to initialize camera. Please make sure your camera is working and try again.');
         onClose();
       }
     };
@@ -72,7 +95,10 @@ function QRScannerModal({ onScan, onClose }) {
 
     return () => {
       if (scanner) {
-        scanner.clear().catch(console.error);
+        console.log('Cleaning up QR scanner...');
+        scanner.clear().catch(error => {
+          console.error('Error cleaning up scanner:', error);
+        });
       }
     };
   }, [onScan, onClose]);
