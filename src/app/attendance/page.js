@@ -11,6 +11,9 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 function QRScannerModal({ onScan, onClose }) {
   useEffect(() => {
     let scanner = null;
+    let lastErrorTime = 0;
+    const ERROR_THROTTLE_MS = 4000; // Only show errors every 2 seconds
+
     const initializeScanner = async () => {
       try {
         // Check if we're on a mobile device
@@ -49,10 +52,18 @@ function QRScannerModal({ onScan, onClose }) {
             onClose();
           },
           (error) => {
-            // Ignore "QR code not found" errors as they're normal during scanning
-            if (error && !error.includes("QR code not found")) {
+            const now = Date.now();
+            // Only show error if it's been more than ERROR_THROTTLE_MS since the last error
+            if (error && 
+                !error.includes("QR code not found") && 
+                now - lastErrorTime > ERROR_THROTTLE_MS) {
               console.error('QR Scan Error:', error);
-              toast.error('Error scanning QR code');
+              // Only show toast for actual errors, not normal scanning feedback
+              if (!error.includes("No QR code found") && 
+                  !error.includes("QR code not found")) {
+                toast.error('Error scanning QR code');
+              }
+              lastErrorTime = now;
             }
           }
         );
