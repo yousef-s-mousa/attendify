@@ -13,57 +13,30 @@ function QRScannerModal({ onScan, onClose }) {
     let scanner = null;
     const initializeScanner = async () => {
       try {
-        // First check if we have camera permissions
-        console.log('Checking for camera devices...');
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        console.log('Available devices:', devices);
-        const hasCamera = devices.some(device => device.kind === 'videoinput');
-        
-        if (!hasCamera) {
-          console.error('No camera found in devices:', devices);
-          toast.error('No camera found on your device');
-          onClose();
-          return;
-        }
+        // Check if we're on a mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
 
-        // Request camera permissions explicitly
-        try {
-          console.log('Requesting camera permissions...');
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-              facingMode: 'environment',
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            } 
-          });
-          // Stop the stream immediately as Html5QrcodeScanner will request its own
-          stream.getTracks().forEach(track => track.stop());
-          console.log('Camera permissions granted');
-        } catch (err) {
-          console.error('Camera permission error:', err);
-          toast.error('Camera permission denied. Please allow camera access and try again.');
-          onClose();
-          return;
-        }
+        // Mobile-specific configuration
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
+          defaultZoomValueIfSupported: 2,
+          rememberLastUsedCamera: true,
+          videoConstraints: {
+            facingMode: { exact: "environment" }, // Force back camera on mobile
+            width: { min: 360, ideal: 640, max: 1920 },
+            height: { min: 240, ideal: 480, max: 1080 }
+          }
+        };
 
         console.log('Initializing QR scanner...');
         scanner = new Html5QrcodeScanner(
           "qr-reader",
-          { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-            showTorchButtonIfSupported: true,
-            showZoomSliderIfSupported: true,
-            defaultZoomValueIfSupported: 2,
-            rememberLastUsedCamera: true,
-            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-            videoConstraints: {
-              facingMode: 'environment',
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            }
-          },
+          config,
           false
         );
 
@@ -76,7 +49,7 @@ function QRScannerModal({ onScan, onClose }) {
             onClose();
           },
           (error) => {
-            // Only show error if it's not a user cancellation
+            // Ignore "QR code not found" errors as they're normal during scanning
             if (error && !error.includes("QR code not found")) {
               console.error('QR Scan Error:', error);
               toast.error('Error scanning QR code');
@@ -86,7 +59,13 @@ function QRScannerModal({ onScan, onClose }) {
         console.log('QR scanner rendered successfully');
       } catch (error) {
         console.error('Scanner initialization error:', error);
-        toast.error('Failed to initialize camera. Please make sure your camera is working and try again.');
+        if (error.name === 'NotAllowedError') {
+          toast.error('Please allow camera access in your browser settings');
+        } else if (error.name === 'NotFoundError') {
+          toast.error('No camera found. Please make sure your camera is working');
+        } else {
+          toast.error('Failed to start camera. Please try again');
+        }
         onClose();
       }
     };
@@ -105,15 +84,15 @@ function QRScannerModal({ onScan, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center max-w-[90vw]">
+      <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col items-center w-[95vw] max-w-[400px]">
         <button
           className="mb-4 text-red-600 font-bold text-lg"
           onClick={onClose}
         >
           Close
         </button>
-        <div id="qr-reader" style={{ width: '100%', maxWidth: '300px', minHeight: '300px' }} />
-        <p className="mt-2 text-gray-700">Scan student QR code</p>
+        <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} />
+        <p className="mt-2 text-gray-700 text-center">Position the QR code within the frame</p>
       </div>
     </div>
   );

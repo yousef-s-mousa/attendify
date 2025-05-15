@@ -86,7 +86,7 @@ export default function HomePage() {
             <Link
               href="/students"
               className="block w-full bg-blue-500 text-white text-center py-2 rounded hover:bg-blue-600"
-            >
+        >
               Manage Students
             </Link>
             <Link

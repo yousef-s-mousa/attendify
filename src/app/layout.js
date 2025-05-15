@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
         <div className="min-h-screen bg-gray-100">
           <Navbar />
           <main className="container mx-auto px-4 py-8">
-            {children}
+        {children}
           </main>
         </div>
         <Toaster position="top-right" />
