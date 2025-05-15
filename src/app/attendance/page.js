@@ -10,36 +10,83 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 
 function QRScannerModal({ onScan, onClose }) {
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: 250 },
-      false
-    );
-    scanner.render(
-      (result) => {
-        onScan(result);
-        scanner.clear();
+    let scanner = null;
+    const initializeScanner = async () => {
+      try {
+        // First check if we have camera permissions
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasCamera = devices.some(device => device.kind === 'videoinput');
+        
+        if (!hasCamera) {
+          toast.error('No camera found on your device');
+          onClose();
+          return;
+        }
+
+        // Request camera permissions explicitly
+        try {
+          await navigator.mediaDevices.getUserMedia({ video: true });
+        } catch (err) {
+          toast.error('Camera permission denied');
+          onClose();
+          return;
+        }
+
+        scanner = new Html5QrcodeScanner(
+          "qr-reader",
+          { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            showTorchButtonIfSupported: true,
+            showZoomSliderIfSupported: true,
+            defaultZoomValueIfSupported: 2,
+            rememberLastUsedCamera: true,
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+          },
+          false
+        );
+
+        await scanner.render(
+          (result) => {
+            onScan(result);
+            scanner.clear();
+            onClose();
+          },
+          (error) => {
+            // Only show error if it's not a user cancellation
+            if (error && !error.includes("QR code not found")) {
+              console.error('QR Scan Error:', error);
+              toast.error('Error scanning QR code');
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Scanner initialization error:', error);
+        toast.error('Failed to initialize camera');
         onClose();
-      },
-      (error) => {
-        // Optionally handle scan errors
       }
-    );
+    };
+
+    initializeScanner();
+
     return () => {
-      scanner.clear();
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
     };
   }, [onScan, onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center max-w-[90vw]">
         <button
           className="mb-4 text-red-600 font-bold text-lg"
           onClick={onClose}
         >
           Close
         </button>
-        <div id="qr-reader" style={{ width: 300 }} />
+        <div id="qr-reader" style={{ width: '100%', maxWidth: '300px', minHeight: '300px' }} />
         <p className="mt-2 text-gray-700">Scan student QR code</p>
       </div>
     </div>

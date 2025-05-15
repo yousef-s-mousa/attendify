@@ -111,47 +111,49 @@ export default function StudentsPage() {
       </form>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {students.map((student) => (
-              <tr
-                key={student.id}
-                className="hover:bg-blue-50 transition cursor-pointer group"
-              >
-                <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
-                  <Link href={`/students/${student.id}`} className="flex items-center gap-2 group-hover:underline">
-                    {student.name}
-                    <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
-                <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                  <button
-                    onClick={() => handleEdit(student)}
-                    className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
-                    title="Edit"
-                  >
-                    <PencilSquareIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(student.id)}
-                    className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
-                    title="Delete"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {students.map((student) => (
+                <tr
+                  key={student.id}
+                  className="hover:bg-blue-50 transition cursor-pointer group"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
+                    <Link href={`/students/${student.id}`} className="flex items-center gap-2 group-hover:underline">
+                      {student.name}
+                      <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
+                  <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                    <button
+                      onClick={() => handleEdit(student)}
+                      className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
+                      title="Edit"
+                    >
+                      <PencilSquareIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(student.id)}
+                      className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
+                      title="Delete"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
