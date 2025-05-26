@@ -64,20 +64,21 @@ export default function DateDetailsPage() {
           <ArrowLeftIcon className="w-5 h-5" /> Back to Dates
         </Link>
       </div>
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-xl shadow-lg overflow-x-auto border border-gray-100">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Class</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Year</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rating</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Time</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
             {attendance.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center py-8 text-gray-400">No attendance records found.</td>
+                <td colSpan={5} className="text-center py-8 text-gray-400">No attendance records found.</td>
               </tr>
             )}
             {attendance.map((record) => {
@@ -88,7 +89,7 @@ export default function DateDetailsPage() {
                     {student?.name || 'Unknown Student'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                    {student?.class || 'N/A'}
+                    {student?.yearOfStudy || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
@@ -100,6 +101,18 @@ export default function DateDetailsPage() {
                     >
                       {record.status}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {record.status === 'present' && record.rating ? (
+                      <span className={`font-bold ${
+                        record.rating >= 8 ? 'text-green-600' : 
+                        record.rating >= 5 ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {record.rating}/10
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {record.timestamp && record.timestamp.toDate

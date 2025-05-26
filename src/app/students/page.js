@@ -6,12 +6,19 @@ import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ArrowRightIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    fatherPhone: '',
+    motherPhone: '',
+    dateOfBirth: '',
+    yearOfStudy: '',
+    churchFatherName: '',
+    address: '',
   });
   const [editingId, setEditingId] = useState(null);
   const phoneRegex = /^(010|011|012|015)\d{8}$/;
@@ -42,6 +49,17 @@ export default function StudentsPage() {
     } else {
       setPhoneError("");
     }
+    
+    if (formData.fatherPhone && !phoneRegex.test(formData.fatherPhone)) {
+      setPhoneError("Father's phone must start with 010, 011, 012, or 015 and be 11 digits.");
+      return;
+    }
+    
+    if (formData.motherPhone && !phoneRegex.test(formData.motherPhone)) {
+      setPhoneError("Mother's phone must start with 010, 011, 012, or 015 and be 11 digits.");
+      return;
+    }
+    
     try {
       if (editingId) {
         await updateDoc(doc(db, 'students', editingId), formData);
@@ -50,7 +68,16 @@ export default function StudentsPage() {
         await addDoc(collection(db, 'students'), formData);
         toast.success('Student added successfully');
       }
-      setFormData({ name: '', phone: '' });
+      setFormData({ 
+        name: '', 
+        phone: '', 
+        fatherPhone: '',
+        motherPhone: '',
+        dateOfBirth: '',
+        yearOfStudy: '',
+        churchFatherName: '',
+        address: ''
+      });
       setEditingId(null);
       fetchStudents();
     } catch (error) {
@@ -59,6 +86,7 @@ export default function StudentsPage() {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this student?')) return;
     try {
       await deleteDoc(doc(db, 'students', id));
       toast.success('Student deleted successfully');
@@ -69,92 +97,201 @@ export default function StudentsPage() {
   };
 
   const handleEdit = (student) => {
-    setFormData({ name: student.name, phone: student.phone });
+    setFormData({ 
+      name: student.name, 
+      phone: student.phone,
+      fatherPhone: student.fatherPhone || '',
+      motherPhone: student.motherPhone || '',
+      dateOfBirth: student.dateOfBirth || '',
+      yearOfStudy: student.yearOfStudy || '',
+      churchFatherName: student.churchFatherName || '',
+      address: student.address || ''
+    });
     setEditingId(student.id);
   };
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-4">Student Management</h1>
-      
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto space-y-4 border border-gray-100"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
-          <input
-            type="tel"
-            placeholder="Phone"
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-            required
-          />
-          {phoneError && (
-            <p className="text-red-600 text-sm mt-1 col-span-2">{phoneError}</p>
-          )}
-        </div>
-        <button
-          type="submit"
-          className="mt-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-6 py-2 rounded-lg shadow hover:from-blue-600 hover:to-blue-800 transition font-semibold"
+    <ProtectedRoute>
+      <div className="space-y-8 p-4">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800">Student Management</h1>
+        
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white p-4 md:p-8 rounded-xl shadow-lg border border-gray-100 space-y-6"
         >
-          {editingId ? 'Update Student' : 'Add Student'}
-        </button>
-      </form>
-
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {students.map((student) => (
-                <tr
-                  key={student.id}
-                  className="hover:bg-blue-50 transition cursor-pointer group"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter student name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter phone number"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Father's Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter father's phone"
+                  value={formData.fatherPhone}
+                  onChange={(e) => setFormData({ ...formData, fatherPhone: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter mother's phone"
+                  value={formData.motherPhone}
+                  onChange={(e) => setFormData({ ...formData, motherPhone: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                <input
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year of Study</label>
+                <select
+                  value={formData.yearOfStudy}
+                  onChange={(e) => setFormData({ ...formData, yearOfStudy: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none bg-white"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
-                    <Link href={`/students/${student.id}`} className="flex items-center gap-2 group-hover:underline">
-                      {student.name}
-                      <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
-                  <td className="px-6 py-4 whitespace-nowrap flex gap-2">
-                    <button
-                      onClick={() => handleEdit(student)}
-                      className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
-                      title="Edit"
-                    >
-                      <PencilSquareIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(student.id)}
-                      className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
-                      title="Delete"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
-                  </td>
+                  <option value="">Select Year of Study</option>
+                  <option value="الصف الأول الابتدائي">الصف الأول الابتدائي</option>
+                  <option value="الصف الثاني الابتدائي">الصف الثاني الابتدائي</option>
+                  <option value="الصف الثالث الابتدائي">الصف الثالث الابتدائي</option>
+                  <option value="الصف الرابع الابتدائي">الصف الرابع الابتدائي</option>
+                  <option value="الصف الخامس الابتدائي">الصف الخامس الابتدائي</option>
+                  <option value="الصف السادس الابتدائي">الصف السادس الابتدائي</option>
+                  <option value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
+                  <option value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
+                  <option value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
+                  <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                  <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                  <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                  <option value="المرحلة الجامعية">المرحلة الجامعية</option>
+                  <option value="خريج">خريج</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Church Father's Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter church father's name"
+                  value={formData.churchFatherName}
+                  onChange={(e) => setFormData({ ...formData, churchFatherName: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  placeholder="Enter address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {phoneError && (
+            <p className="text-red-600 text-sm mt-1">{phoneError}</p>
+          )}
+          
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="w-full md:w-auto bg-gradient-to-r from-blue-500 to-blue-700 text-white px-8 py-3 rounded-lg shadow hover:from-blue-600 hover:to-blue-800 transition font-semibold"
+            >
+              {editingId ? 'Update Student' : 'Add Student'}
+            </button>
+          </div>
+        </form>
+
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Year</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Church Father</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {students.map((student) => (
+                  <tr
+                    key={student.id}
+                    className="hover:bg-blue-50 transition cursor-pointer group"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
+                      <Link href={`/students/${student.id}`} className="flex items-center gap-2 group-hover:underline">
+                        {student.name}
+                        <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
+                      </Link>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.yearOfStudy}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.churchFatherName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                      <button
+                        onClick={() => handleEdit(student)}
+                        className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
+                        title="Edit"
+                      >
+                        <PencilSquareIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(student.id)}
+                        className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
+                        title="Delete"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 } 
