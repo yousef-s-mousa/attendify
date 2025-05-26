@@ -137,7 +137,7 @@ export default function StudentProfilePage({ params }) {
           </div>
           
           <div>
-            <p className="text-gray-500">Church Father's Name</p>
+            <p className="text-gray-500">Church Father&apos;s Name</p>
             <p className="font-semibold text-lg text-blue-900">{student.churchFatherName || 'Not provided'}</p>
           </div>
           
