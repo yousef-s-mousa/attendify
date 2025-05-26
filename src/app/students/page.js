@@ -5,10 +5,12 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRightIcon, PencilSquareIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function StudentsPage() {
+  const router = useRouter();
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -128,6 +130,15 @@ export default function StudentsPage() {
       address: student.address || ''
     });
     setEditingId(student.id);
+  };
+
+  const handleRowClick = (studentId) => {
+    router.push(`/students/${studentId}`);
+  };
+
+  const handleActionClick = (e, action) => {
+    e.stopPropagation(); // Prevent row click when clicking action buttons
+    action();
   };
 
   return (
@@ -290,28 +301,33 @@ export default function StudentsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                  <tr 
+                    key={student.id} 
+                    className="hover:bg-blue-50 transition cursor-pointer group"
+                    onClick={() => handleRowClick(student.id)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
+                      <div className="flex items-center gap-2 group-hover:underline">
+                        {student.name}
+                        <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{student.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{student.yearOfStudy}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.yearOfStudy}</td>
+                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
                       <button
-                        onClick={() => handleEdit(student)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        onClick={(e) => handleActionClick(e, () => handleEdit(student))}
+                        className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
+                        title="Edit"
                       >
-                        <PencilSquareIcon className="h-5 w-5" />
+                        <PencilSquareIcon className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(student.id)}
-                        className="text-red-600 hover:text-red-900"
+                        onClick={(e) => handleActionClick(e, () => handleDelete(student.id))}
+                        className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
+                        title="Delete"
                       >
-                        <TrashIcon className="h-5 w-5" />
+                        <TrashIcon className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
