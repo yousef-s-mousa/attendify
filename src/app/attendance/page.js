@@ -13,14 +13,12 @@ function QRScannerModal({ onScan, onClose }) {
   useEffect(() => {
     let scanner = null;
     let lastErrorTime = 0;
-    const ERROR_THROTTLE_MS = 4000; // Only show errors every 2 seconds
+    const ERROR_THROTTLE_MS = 8000;
 
     const initializeScanner = async () => {
       try {
-        // Check if we're on a mobile device
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-        // Mobile-specific configuration
         const config = {
           fps: 10,
           qrbox: { width: 250, height: 250 },
@@ -30,7 +28,7 @@ function QRScannerModal({ onScan, onClose }) {
           defaultZoomValueIfSupported: 2,
           rememberLastUsedCamera: true,
           videoConstraints: {
-            facingMode: { exact: "environment" }, // Force back camera on mobile
+            facingMode: { exact: "environment" },
             width: { min: 360, ideal: 640, max: 1920 },
             height: { min: 240, ideal: 480, max: 1080 }
           }
@@ -50,11 +48,9 @@ function QRScannerModal({ onScan, onClose }) {
           },
           (error) => {
             const now = Date.now();
-            // Only show error if it's been more than ERROR_THROTTLE_MS since the last error
             if (error && 
                 !error.includes("QR code not found") && 
                 now - lastErrorTime > ERROR_THROTTLE_MS) {
-              // Only show toast for actual errors, not normal scanning feedback
               if (!error.includes("No QR code found") && 
                   !error.includes("QR code not found")) {
                 toast.error('Error scanning QR code');
@@ -87,16 +83,39 @@ function QRScannerModal({ onScan, onClose }) {
   }, [onScan, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col items-center w-[95vw] max-w-[400px]">
-        <button
-          className="mb-4 text-red-600 font-bold text-lg"
-          onClick={onClose}
-        >
-          Close
-        </button>
-        <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} />
-        <p className="mt-2 text-gray-700 text-center">Position the QR code within the frame</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
+      <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center w-[95vw] max-w-[400px] relative">
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+            title="Close Scanner"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Scan QR Code</h2>
+        
+        <div className="w-full bg-gray-100 rounded-xl p-4 mb-4">
+          <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} />
+        </div>
+        
+        <div className="text-center space-y-2">
+          <p className="text-gray-600 font-medium">Position the QR code within the frame</p>
+          <p className="text-sm text-gray-500">Make sure the QR code is well-lit and clearly visible</p>
+        </div>
+        
+        <div className="mt-6 w-full">
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
