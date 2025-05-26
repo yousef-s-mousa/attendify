@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs, query, where, setDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
@@ -19,7 +19,6 @@ function QRScannerModal({ onScan, onClose }) {
       try {
         // Check if we're on a mobile device
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
 
         // Mobile-specific configuration
         const config = {
@@ -37,17 +36,14 @@ function QRScannerModal({ onScan, onClose }) {
           }
         };
 
-        console.log('Initializing QR scanner...');
         scanner = new Html5QrcodeScanner(
           "qr-reader",
           config,
           false
         );
 
-        console.log('Rendering QR scanner...');
         await scanner.render(
           (result) => {
-            console.log('QR code scanned:', result);
             onScan(result);
             scanner.clear();
             onClose();
@@ -58,7 +54,6 @@ function QRScannerModal({ onScan, onClose }) {
             if (error && 
                 !error.includes("QR code not found") && 
                 now - lastErrorTime > ERROR_THROTTLE_MS) {
-              console.error('QR Scan Error:', error);
               // Only show toast for actual errors, not normal scanning feedback
               if (!error.includes("No QR code found") && 
                   !error.includes("QR code not found")) {
@@ -68,9 +63,7 @@ function QRScannerModal({ onScan, onClose }) {
             }
           }
         );
-        console.log('QR scanner rendered successfully');
       } catch (error) {
-        console.error('Scanner initialization error:', error);
         if (error.name === 'NotAllowedError') {
           toast.error('Please allow camera access in your browser settings');
         } else if (error.name === 'NotFoundError') {
@@ -86,9 +79,8 @@ function QRScannerModal({ onScan, onClose }) {
 
     return () => {
       if (scanner) {
-        console.log('Cleaning up QR scanner...');
         scanner.clear().catch(error => {
-          console.error('Error cleaning up scanner:', error);
+          // Silent error handling for cleanup
         });
       }
     };
@@ -119,12 +111,6 @@ export default function AttendancePage() {
   const [search, setSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
 
-  useEffect(() => {
-    fetchStudents();
-    fetchAttendance();
-    checkDayEnded();
-  }, [selectedDate, fetchAttendance, checkDayEnded]);
-
   const fetchStudents = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'students'));
@@ -138,7 +124,7 @@ export default function AttendancePage() {
     }
   };
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     try {
       const q = query(
         collection(db, 'attendance'),
@@ -157,13 +143,19 @@ export default function AttendancePage() {
     } catch (error) {
       toast.error('Error fetching attendance');
     }
-  };
+  }, [selectedDate]);
 
-  const checkDayEnded = async () => {
+  const checkDayEnded = useCallback(async () => {
     // Use a special doc in Firestore to track if the day is ended
     const endDoc = await getDocs(query(collection(db, 'attendance_end'), where('date', '==', selectedDate)));
     setDayEnded(!endDoc.empty);
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchStudents();
+    fetchAttendance();
+    checkDayEnded();
+  }, [selectedDate, fetchAttendance, checkDayEnded]);
 
   const handleAttendanceChange = async (studentId, status) => {
     if (dayEnded) return;
