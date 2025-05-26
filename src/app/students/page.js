@@ -146,10 +146,10 @@ export default function StudentsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Father's Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Father&apos;s Phone </label>
                 <input
                   type="tel"
-                  placeholder="Enter father's phone"
+                  placeholder="Enter father&apos;s phone"
                   value={formData.fatherPhone}
                   onChange={(e) => setFormData({ ...formData, fatherPhone: e.target.value })}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
@@ -157,10 +157,10 @@ export default function StudentsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mother&apos;s Phone</label>
                 <input
                   type="tel"
-                  placeholder="Enter mother's phone"
+                  placeholder="Enter mother&apos;s phone"
                   value={formData.motherPhone}
                   onChange={(e) => setFormData({ ...formData, motherPhone: e.target.value })}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
@@ -205,10 +205,10 @@ export default function StudentsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Church Father's Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Church Father&apos;s Name</label>
                 <input
                   type="text"
-                  placeholder="Enter church father's name"
+                  placeholder="Enter church father&apos;s name"
                   value={formData.churchFatherName}
                   onChange={(e) => setFormData({ ...formData, churchFatherName: e.target.value })}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"

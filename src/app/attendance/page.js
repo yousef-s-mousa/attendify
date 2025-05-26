@@ -123,7 +123,7 @@ export default function AttendancePage() {
     fetchStudents();
     fetchAttendance();
     checkDayEnded();
-  }, [selectedDate]);
+  }, [selectedDate, fetchAttendance, checkDayEnded]);
 
   const fetchStudents = async () => {
     try {
