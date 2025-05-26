@@ -5,11 +5,13 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { ArrowRightIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon, PencilSquareIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -28,6 +30,23 @@ export default function StudentsPage() {
     fetchStudents();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredStudents(students);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = students.filter(student => 
+        student.name.toLowerCase().includes(query) ||
+        student.phone.includes(query) ||
+        (student.fatherPhone && student.fatherPhone.includes(query)) ||
+        (student.motherPhone && student.motherPhone.includes(query)) ||
+        (student.churchFatherName && student.churchFatherName.toLowerCase().includes(query)) ||
+        (student.yearOfStudy && student.yearOfStudy.toLowerCase().includes(query))
+      );
+      setFilteredStudents(filtered);
+    }
+  }, [searchQuery, students]);
+
   const fetchStudents = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'students'));
@@ -36,6 +55,7 @@ export default function StudentsPage() {
         ...doc.data()
       }));
       setStudents(studentsList);
+      setFilteredStudents(studentsList);
     } catch (error) {
       toast.error('Error fetching students');
     }
@@ -115,6 +135,20 @@ export default function StudentsPage() {
       <div className="space-y-8 p-4">
         <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800">Student Management</h1>
         
+        {/* Search Bar */}
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name, phone, or other details..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+          />
+        </div>
+
         <form
           onSubmit={handleSubmit}
           className="bg-white p-4 md:p-8 rounded-xl shadow-lg border border-gray-100 space-y-6"
@@ -242,47 +276,42 @@ export default function StudentsPage() {
           </div>
         </form>
 
+        {/* Students List */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Year</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Church Father</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year of Study</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {students.map((student) => (
-                  <tr
-                    key={student.id}
-                    className="hover:bg-blue-50 transition cursor-pointer group"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-900">
-                      <Link href={`/students/${student.id}`} className="flex items-center gap-2 group-hover:underline">
-                        {student.name}
-                        <ArrowRightIcon className="w-4 h-4 text-blue-400 group-hover:text-blue-600" />
-                      </Link>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{student.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.phone}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.yearOfStudy}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">{student.churchFatherName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{student.phone}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{student.yearOfStudy}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleEdit(student)}
-                        className="p-2 rounded-full bg-yellow-100 hover:bg-yellow-200 text-yellow-700 transition"
-                        title="Edit"
+                        className="text-blue-600 hover:text-blue-900 mr-4"
                       >
-                        <PencilSquareIcon className="w-5 h-5" />
+                        <PencilSquareIcon className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => handleDelete(student.id)}
-                        className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-700 transition"
-                        title="Delete"
+                        className="text-red-600 hover:text-red-900"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <TrashIcon className="h-5 w-5" />
                       </button>
                     </td>
                   </tr>
