@@ -146,7 +146,7 @@ export default function StudentsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Father&apos;s Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Father&apos;s Phone </label>
                 <input
                   type="tel"
                   placeholder="Enter father&apos;s phone"
