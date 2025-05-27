@@ -23,10 +23,13 @@ export default function StudentsPage() {
     yearOfStudy: '',
     churchFatherName: '',
     address: '',
+    nationalId: '',
   });
   const [editingId, setEditingId] = useState(null);
   const phoneRegex = /^(010|011|012|015)\d{8}$/;
+  const nationalIdRegex = /^\d{14}$/;
   const [phoneError, setPhoneError] = useState("");
+  const [nationalIdError, setNationalIdError] = useState("");
 
   useEffect(() => {
     fetchStudents();
@@ -81,6 +84,24 @@ export default function StudentsPage() {
       setPhoneError("Mother's phone must start with 010, 011, 012, or 015 and be 11 digits.");
       return;
     }
+
+    if (formData.nationalId && !nationalIdRegex.test(formData.nationalId)) {
+      setNationalIdError("National ID must be exactly 14 digits");
+      return;
+    } else {
+      setNationalIdError("");
+    }
+
+    // Check for duplicate phone numbers
+    const isDuplicatePhone = students.some(student => 
+      student.phone === formData.phone && 
+      (!editingId || student.id !== editingId)
+    );
+
+    if (isDuplicatePhone) {
+      setPhoneError("This phone number is already registered to another student");
+      return;
+    }
     
     try {
       if (editingId) {
@@ -98,7 +119,8 @@ export default function StudentsPage() {
         dateOfBirth: '',
         yearOfStudy: '',
         churchFatherName: '',
-        address: ''
+        address: '',
+        nationalId: '',
       });
       setEditingId(null);
       fetchStudents();
@@ -127,7 +149,8 @@ export default function StudentsPage() {
       dateOfBirth: student.dateOfBirth || '',
       yearOfStudy: student.yearOfStudy || '',
       churchFatherName: student.churchFatherName || '',
-      address: student.address || ''
+      address: student.address || '',
+      nationalId: student.nationalId || '',
     });
     setEditingId(student.id);
   };
@@ -176,6 +199,21 @@ export default function StudentsPage() {
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
                   required
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">National ID</label>
+                <input
+                  type="text"
+                  placeholder="Enter 14-digit National ID (optional)"
+                  value={formData.nationalId}
+                  onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+                  maxLength={14}
+                />
+                {nationalIdError && (
+                  <p className="text-red-600 text-sm mt-1">{nationalIdError}</p>
+                )}
               </div>
               
               <div>

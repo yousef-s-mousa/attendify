@@ -108,6 +108,46 @@ function QRScannerModal({ onScan, onClose }) {
   );
 }
 
+function EndDayConfirmationModal({ isOpen, onConfirm, onCancel }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 opacity-100">
+      <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 ">
+        <h3 className="text-xl font-bold text-gray-100 opacity-100 mb-4">End Day Confirmation</h3>
+        
+        <div className="space-y-3 mb-6">
+          <p className="text-gray-600">Are you sure you want to end the day?</p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800 font-medium mb-2">This will:</p>
+            <ul className="list-disc list-inside space-y-1 text-yellow-700">
+              <li>Mark all unmarked students as absent</li>
+              <li>Set default rating of 10 for present students without ratings</li>
+              <li>Lock attendance for this day</li>
+            </ul>
+          </div>
+          <p className="text-red-600 font-medium">This action cannot be undone.</p>
+        </div>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+          >
+            End Day
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AttendancePage() {
   const [students, setStudents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -116,6 +156,7 @@ export default function AttendancePage() {
   const [dayEnded, setDayEnded] = useState(false);
   const [search, setSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const [showEndDayConfirmation, setShowEndDayConfirmation] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -291,7 +332,7 @@ export default function AttendancePage() {
         </div>
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
           <button
-            onClick={handleEndDay}
+            onClick={() => setShowEndDayConfirmation(true)}
             disabled={dayEnded}
             className={`w-full md:w-auto bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-2 rounded-lg shadow font-semibold transition hover:from-red-600 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed`}
           >
@@ -397,6 +438,14 @@ export default function AttendancePage() {
             onClose={() => setShowScanner(false)}
           />
         )}
+        <EndDayConfirmationModal
+          isOpen={showEndDayConfirmation}
+          onConfirm={() => {
+            setShowEndDayConfirmation(false);
+            handleEndDay();
+          }}
+          onCancel={() => setShowEndDayConfirmation(false)}
+        />
       </div>
     </ProtectedRoute>
   );

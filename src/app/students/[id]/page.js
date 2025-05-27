@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { format, parseISO } from 'date-fns';
@@ -10,6 +10,7 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { QRCode } from 'react-qrcode-logo';
 
 export default function StudentProfilePage({ params }) {
+  const studentId = use(params).id;
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [filter, setFilter] = useState('all'); // all, present, absent
@@ -18,11 +19,11 @@ export default function StudentProfilePage({ params }) {
   useEffect(() => {
     fetchStudent();
     fetchAttendance();
-  }, [params.id]);
+  }, [studentId]);
 
   const fetchStudent = async () => {
     try {
-      const docRef = doc(db, 'students', params.id);
+      const docRef = doc(db, 'students', studentId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         setStudent({ id: docSnap.id, ...docSnap.data() });
@@ -38,7 +39,7 @@ export default function StudentProfilePage({ params }) {
     try {
       const q = query(
         collection(db, 'attendance'),
-        where('studentId', '==', params.id)
+        where('studentId', '==', studentId)
       );
       const querySnapshot = await getDocs(q);
       const attendanceList = querySnapshot.docs.map(doc => ({
@@ -108,6 +109,10 @@ export default function StudentProfilePage({ params }) {
           <div>
             <p className="text-gray-500">Name</p>
             <p className="font-semibold text-lg text-blue-900">{student.name}</p>
+          </div>
+          <div>
+            <p className="text-gray-500">National ID</p>
+            <p className="font-semibold text-lg text-blue-900">{student.nationalId || 'Not provided'}</p>
           </div>
           <div>
             <p className="text-gray-500">Phone</p>
