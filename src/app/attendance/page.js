@@ -10,10 +10,14 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 function QRScannerModal({ onScan, onClose }) {
+  const [torchOn, setTorchOn] = useState(false);
+  const [scanner, setScanner] = useState(null);
   useEffect(() => {
-    let scanner = null;
+    let html5Scanner = null;
     let lastErrorTime = 0;
     const ERROR_THROTTLE_MS = 8000;
+    let currentTorchOn = false;
+    let currentCameraId = null;
 
     const initializeScanner = async () => {
       try {
@@ -31,9 +35,8 @@ function QRScannerModal({ onScan, onClose }) {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
-          showTorchButtonIfSupported: true,
+          showTorchButtonIfSupported: false, // We'll handle torch manually
           showZoomSliderIfSupported: false,
-          defaultZoomValueIfSupported: 2,
           rememberLastUsedCamera: true,
           videoConstraints: {
             facingMode: { exact: "environment" },
@@ -42,46 +45,17 @@ function QRScannerModal({ onScan, onClose }) {
           }
         };
 
-        scanner = new Html5QrcodeScanner(
+        html5Scanner = new Html5QrcodeScanner(
           "qr-reader",
           config,
           false
         );
+        setScanner(html5Scanner);
 
-        // Add custom styles for the scanner controls
-        const style = document.createElement('style');
-        style.textContent = `
-          #qr-reader__scan_region {
-            background: white !important;
-            padding: 20px !important;
-            border-radius: 12px !important;
-          }
-          #qr-reader__scan_region button {
-            font-size: 16px !important;
-            padding: 12px 20px !important;
-            margin: 8px !important;
-            border-radius: 8px !important;
-            background: #f3f4f6 !important;
-            border: 2px solid #e5e7eb !important;
-          }
-          #qr-reader__scan_region button:hover {
-            background: #e5e7eb !important;
-          }
-          #qr-reader__scan_region select {
-            font-size: 16px !important;
-            padding: 12px 20px !important;
-            margin: 8px !important;
-            border-radius: 8px !important;
-            background: #f3f4f6 !important;
-            border: 2px solid #e5e7eb !important;
-          }
-        `;
-        document.head.appendChild(style);
-
-        await scanner.render(
+        await html5Scanner.render(
           (result) => {
             onScan(result);
-            scanner.clear();
+            html5Scanner.clear();
             onClose();
           },
           (error) => {
@@ -112,20 +86,38 @@ function QRScannerModal({ onScan, onClose }) {
     initializeScanner();
 
     return () => {
-      if (scanner) {
-        scanner.clear().catch(error => {
-          // Silent error handling for cleanup
-        });
+      if (html5Scanner) {
+        html5Scanner.clear().catch(() => {});
       }
     };
   }, [onScan, onClose]);
 
+  // Torch toggle handler
+  const handleTorchToggle = async () => {
+    if (!scanner) return;
+    try {
+      const videoElem = document.querySelector('#qr-reader video');
+      if (videoElem && videoElem.srcObject) {
+        const track = videoElem.srcObject.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        if (capabilities.torch) {
+          await track.applyConstraints({ advanced: [{ torch: !torchOn }] });
+          setTorchOn(!torchOn);
+        } else {
+          toast.error('Torch not supported on this device');
+        }
+      }
+    } catch (e) {
+      toast.error('Failed to toggle torch');
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="absolute top-4 right-4">
         <button
           onClick={onClose}
-          className="p-3 rounded-full bg-white hover:bg-gray-100 text-gray-800 transition-colors shadow-lg"
+          className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors shadow-lg"
           title="Close Scanner"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,7 +125,37 @@ function QRScannerModal({ onScan, onClose }) {
           </svg>
         </button>
       </div>
-      <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
+      <div className="flex flex-col items-center justify-center w-full h-full">
+        <div className="flex items-center justify-center" style={{height: 300}}>
+          {/* QR scan area with border/guide */}
+          <div style={{
+            width: 220,
+            height: 220,
+            border: '4px solid black',
+            borderRadius: 16,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'white',
+          }}>
+            <div id="qr-reader" style={{ width: 200, height: 200, background: 'white' }} />
+            {/* Corner guides */}
+            <div style={{position:'absolute',top:0,left:0,width:40,height:40,borderTop:'4px solid black',borderLeft:'4px solid black',borderTopLeftRadius:12}}></div>
+            <div style={{position:'absolute',top:0,right:0,width:40,height:40,borderTop:'4px solid black',borderRight:'4px solid black',borderTopRightRadius:12}}></div>
+            <div style={{position:'absolute',bottom:0,left:0,width:40,height:40,borderBottom:'4px solid black',borderLeft:'4px solid black',borderBottomLeftRadius:12}}></div>
+            <div style={{position:'absolute',bottom:0,right:0,width:40,height:40,borderBottom:'4px solid black',borderRight:'4px solid black',borderBottomRightRadius:12}}></div>
+          </div>
+        </div>
+        {/* Torch On button */}
+        <button
+          onClick={handleTorchToggle}
+          className="mt-8 text-2xl font-bold text-white bg-red-600 hover:bg-red-700 px-12 py-4 rounded-xl shadow-lg transition"
+          style={{letterSpacing:'2px'}}
+        >
+          {torchOn ? 'Torch Off' : 'Torch On'}
+        </button>
+      </div>
     </div>
   );
 }
