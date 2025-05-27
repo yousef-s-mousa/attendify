@@ -92,18 +92,57 @@ function QRScannerModal({ onScan, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
-      <div className="absolute top-4 right-4">
-        <button
-          onClick={onClose}
-          className="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white transition-colors"
-          title="Close Scanner"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+      {/* Scanner Container */}
+      <div className="relative w-full h-full">
+        <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
+        
+        {/* Overlay with scanning frame */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-72 h-72 border-2 border-blue-500 rounded-lg relative">
+            {/* Corner decorations */}
+            <div className="absolute -top-1 -left-1 w-8 h-8 border-t-2 border-l-2 border-blue-500"></div>
+            <div className="absolute -top-1 -right-1 w-8 h-8 border-t-2 border-r-2 border-blue-500"></div>
+            <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-2 border-l-2 border-blue-500"></div>
+            <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-blue-500"></div>
+          </div>
+        </div>
+
+        {/* Top Bar */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
+          <button
+            onClick={onClose}
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+            title="Close Scanner"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="text-white font-semibold text-lg">Scan QR Code</div>
+          <div className="w-10"></div> {/* Spacer for balance */}
+        </div>
+
+        {/* Bottom Instructions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
+          <div className="text-center text-white/90">
+            <p className="text-lg font-medium mb-2">Position QR code within frame</p>
+            <p className="text-sm text-white/70">Make sure the code is well-lit and clearly visible</p>
+          </div>
+        </div>
+
+        {/* Custom Torch Button */}
+        <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
+          <button
+            id="html5-qrcode-button-camera-permission"
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+            title="Toggle Flashlight"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }
