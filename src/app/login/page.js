@@ -26,7 +26,7 @@ export default function LoginPage() {
 
     if (user) {
       toast.success('Logged in successfully!');
-      router.push('/students');
+      router.push('/');
     }
   };
 
