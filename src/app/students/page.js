@@ -167,22 +167,7 @@ export default function StudentsPage() {
   return (
     <ProtectedRoute>
       <div className="space-y-8 p-4">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800">Student Management</h1>
-        
-        {/* Search Bar */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search by name, phone, or other details..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
-          />
-        </div>
-
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-800">Student Management</h1>        
         <form
           onSubmit={handleSubmit}
           className="bg-white p-4 md:p-8 rounded-xl shadow-lg border border-gray-100 space-y-6"
@@ -324,6 +309,20 @@ export default function StudentsPage() {
             </button>
           </div>
         </form>
+                {/* Search Bar */}
+                <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name, phone, or other details..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none"
+          />
+        </div>
+
 
         {/* Students List */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
