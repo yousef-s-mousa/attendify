@@ -17,14 +17,22 @@ function QRScannerModal({ onScan, onClose }) {
 
     const initializeScanner = async () => {
       try {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        // Request camera permissions first
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { exact: "environment" },
+            width: { min: 360, ideal: 640, max: 1920 },
+            height: { min: 240, ideal: 480, max: 1080 }
+          } 
+        });
+        stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
 
         const config = {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
+          showZoomSliderIfSupported: false,
           defaultZoomValueIfSupported: 2,
           rememberLastUsedCamera: true,
           videoConstraints: {
@@ -83,40 +91,19 @@ function QRScannerModal({ onScan, onClose }) {
   }, [onScan, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-      <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center w-[95vw] max-w-[400px] relative">
-        <div className="absolute top-4 right-4">
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
-            title="Close Scanner"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Scan QR Code</h2>
-        
-        <div className="w-full bg-gray-100 rounded-xl p-4 mb-4">
-          <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} />
-        </div>
-        
-        <div className="text-center space-y-2">
-          <p className="text-gray-600 font-medium">Position the QR code within the frame</p>
-          <p className="text-sm text-gray-500">Make sure the QR code is well-lit and clearly visible</p>
-        </div>
-        
-        <div className="mt-6 w-full">
-          <button
-            onClick={onClose}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white transition-colors"
+          title="Close Scanner"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
+      <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
     </div>
   );
 }
