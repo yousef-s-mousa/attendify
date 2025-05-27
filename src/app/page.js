@@ -23,7 +23,6 @@ export default function HomePage() {
         setStats(data);
       } catch (error) {
         toast.error('Error loading stats');
-        console.error('Error fetching stats:', error);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, getDocs, query, where, setDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
@@ -13,53 +13,52 @@ function QRScannerModal({ onScan, onClose }) {
   useEffect(() => {
     let scanner = null;
     let lastErrorTime = 0;
-    const ERROR_THROTTLE_MS = 4000; // Only show errors every 2 seconds
+    const ERROR_THROTTLE_MS = 8000;
 
     const initializeScanner = async () => {
       try {
-        // Check if we're on a mobile device
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
+        // Request camera permissions first
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: { exact: "environment" },
+            width: { min: 360, ideal: 640, max: 1920 },
+            height: { min: 240, ideal: 480, max: 1080 }
+          } 
+        });
+        stream.getTracks().forEach(track => track.stop()); // Stop the stream after getting permission
 
-        // Mobile-specific configuration
         const config = {
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
+          showZoomSliderIfSupported: false,
           defaultZoomValueIfSupported: 2,
           rememberLastUsedCamera: true,
           videoConstraints: {
-            facingMode: { exact: "environment" }, // Force back camera on mobile
+            facingMode: { exact: "environment" },
             width: { min: 360, ideal: 640, max: 1920 },
             height: { min: 240, ideal: 480, max: 1080 }
           }
         };
 
-        console.log('Initializing QR scanner...');
         scanner = new Html5QrcodeScanner(
           "qr-reader",
           config,
           false
         );
 
-        console.log('Rendering QR scanner...');
         await scanner.render(
           (result) => {
-            console.log('QR code scanned:', result);
             onScan(result);
             scanner.clear();
             onClose();
           },
           (error) => {
             const now = Date.now();
-            // Only show error if it's been more than ERROR_THROTTLE_MS since the last error
             if (error && 
                 !error.includes("QR code not found") && 
                 now - lastErrorTime > ERROR_THROTTLE_MS) {
-              console.error('QR Scan Error:', error);
-              // Only show toast for actual errors, not normal scanning feedback
               if (!error.includes("No QR code found") && 
                   !error.includes("QR code not found")) {
                 toast.error('Error scanning QR code');
@@ -68,9 +67,7 @@ function QRScannerModal({ onScan, onClose }) {
             }
           }
         );
-        console.log('QR scanner rendered successfully');
       } catch (error) {
-        console.error('Scanner initialization error:', error);
         if (error.name === 'NotAllowedError') {
           toast.error('Please allow camera access in your browser settings');
         } else if (error.name === 'NotFoundError') {
@@ -86,25 +83,65 @@ function QRScannerModal({ onScan, onClose }) {
 
     return () => {
       if (scanner) {
-        console.log('Cleaning up QR scanner...');
         scanner.clear().catch(error => {
-          console.error('Error cleaning up scanner:', error);
+          // Silent error handling for cleanup
         });
       }
     };
   }, [onScan, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-      <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col items-center w-[95vw] max-w-[400px]">
-        <button
-          className="mb-4 text-red-600 font-bold text-lg"
-          onClick={onClose}
-        >
-          Close
-        </button>
-        <div id="qr-reader" style={{ width: '100%', minHeight: '300px' }} />
-        <p className="mt-2 text-gray-700 text-center">Position the QR code within the frame</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+      {/* Scanner Container */}
+      <div className="relative w-full h-full">
+        <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
+        
+        {/* Overlay with scanning frame */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-72 h-72 border-2 border-blue-500 rounded-lg relative">
+            {/* Corner decorations */}
+            <div className="absolute -top-1 -left-1 w-8 h-8 border-t-2 border-l-2 border-blue-500"></div>
+            <div className="absolute -top-1 -right-1 w-8 h-8 border-t-2 border-r-2 border-blue-500"></div>
+            <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-2 border-l-2 border-blue-500"></div>
+            <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-blue-500"></div>
+          </div>
+        </div>
+
+        {/* Top Bar */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/70 to-transparent">
+          <button
+            onClick={onClose}
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+            title="Close Scanner"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="text-white font-semibold text-lg">Scan QR Code</div>
+          <div className="w-10"></div> {/* Spacer for balance */}
+        </div>
+
+        {/* Bottom Instructions */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
+          <div className="text-center text-white/90">
+            <p className="text-lg font-medium mb-2">Position QR code within frame</p>
+            <p className="text-sm text-white/70">Make sure the code is well-lit and clearly visible</p>
+          </div>
+        </div>
+
+        {/* Custom Torch Button */}
+        <div className="absolute top-1/2 right-4 transform -translate-y-1/2">
+          <button
+            id="html5-qrcode-button-camera-permission"
+            className="p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-200 backdrop-blur-sm"
+            title="Toggle Flashlight"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -119,12 +156,6 @@ export default function AttendancePage() {
   const [search, setSearch] = useState("");
   const [showScanner, setShowScanner] = useState(false);
 
-  useEffect(() => {
-    fetchStudents();
-    fetchAttendance();
-    checkDayEnded();
-  }, [selectedDate, fetchAttendance, checkDayEnded]);
-
   const fetchStudents = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'students'));
@@ -138,7 +169,7 @@ export default function AttendancePage() {
     }
   };
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     try {
       const q = query(
         collection(db, 'attendance'),
@@ -157,13 +188,19 @@ export default function AttendancePage() {
     } catch (error) {
       toast.error('Error fetching attendance');
     }
-  };
+  }, [selectedDate]);
 
-  const checkDayEnded = async () => {
+  const checkDayEnded = useCallback(async () => {
     // Use a special doc in Firestore to track if the day is ended
     const endDoc = await getDocs(query(collection(db, 'attendance_end'), where('date', '==', selectedDate)));
     setDayEnded(!endDoc.empty);
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchStudents();
+    fetchAttendance();
+    checkDayEnded();
+  }, [selectedDate, fetchAttendance, checkDayEnded]);
 
   const handleAttendanceChange = async (studentId, status) => {
     if (dayEnded) return;
